@@ -1,7 +1,7 @@
 package com.torneotenismesa.simulacion.implementaciones;
 
+import com.torneotenismesa.gestionparticipantes.modelos.Jugador;
 import com.torneotenismesa.gestiontorneos.modelos.FormatoTorneo;
-import com.torneotenismesa.simulacion.modelos_mock.Jugador;
 import com.torneotenismesa.simulacion.modelos_mock.Partido;
 import com.torneotenismesa.simulacion.modelos_mock.Ronda;
 

@@ -1,13 +1,12 @@
 package com.torneotenismesa.gestiontorneos.modelos;
 
-import com.torneotenismesa.gestiontorneos.enums.EstadoTorneo;
-import com.torneotenismesa.gestiontorneos.enums.TipoTorneo;
-
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import com.torneotenismesa.gestiontorneos.enums.EstadoTorneo;
+import com.torneotenismesa.gestiontorneos.enums.TipoTorneo;
 
 // --- Importaciones de clases de OTROS SUBSISTEMAS (conceptuales por ahora) ---
 // import com.torneotenismesa.gestionparticipantes.modelos.Inscripcion;
