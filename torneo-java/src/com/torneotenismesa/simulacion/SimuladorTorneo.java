@@ -1,9 +1,9 @@
 package com.torneotenismesa.simulacion;
 
-import com.torneotenismesa.gestionparticipantes.modelos.Jugador;
 import com.torneotenismesa.gestiontorneos.enums.TipoTorneo;
 import com.torneotenismesa.gestiontorneos.modelos.Torneo;
 import com.torneotenismesa.simulacion.implementaciones.EliminatoriaDirectaFormato;
+import com.torneotenismesa.simulacion.modelos_mock.Jugador;
 import com.torneotenismesa.simulacion.modelos_mock.Ronda;
 
 import java.util.ArrayList;
