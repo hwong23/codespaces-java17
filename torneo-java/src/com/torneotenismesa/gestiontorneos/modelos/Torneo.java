@@ -1,25 +1,23 @@
+// src/com/torneotenismesa/gestiontorneos/modelos/Torneo.java
 package com.torneotenismesa.gestiontorneos.modelos;
 
 import com.torneotenismesa.gestiontorneos.enums.EstadoTorneo;
 import com.torneotenismesa.gestiontorneos.enums.TipoTorneo;
+// --- IMPORTACIONES DE OTROS SUBSISTEMAS ---
+import com.torneotenismesa.gestionparticipantes.modelos.Inscripcion; // <--- AÑADIR
+import com.torneotenismesa.gestionparticipantes.modelos.Participante; // <--- AÑADIR
+import com.torneotenismesa.gestionparticipantes.enums.EstadoInscripcion; // <--- AÑADIR
+
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
-// --- Importaciones de clases de OTROS SUBSISTEMAS (conceptuales por ahora) ---
-// import com.torneotenismesa.gestionparticipantes.modelos.Inscripcion;
-// import com.torneotenismesa.gestionpartidos.modelos.Ronda;
-// import com.torneotenismesa.gestionpartidos.modelos.Grupo;
-// import com.torneotenismesa.gestionusuarios.modelos.Usuario;
 
-/**
- * Entidad principal que representa un torneo de tenis de mesa.
- * Contiene la información general del torneo, su estado, formato y
- * referencias a las entidades relacionadas.
- */
 public class Torneo {
 
     private final UUID idTorneo;
@@ -28,17 +26,13 @@ public class Torneo {
     private Date fechaFin;
     private String lugar;
     private TipoTorneo tipoTorneo;
-    private FormatoTorneo formato; // Referencia a la interfaz del formato
+    private FormatoTorneo formato;
     private EstadoTorneo estado;
     private String reglasEspecificas;
+    private UUID idOrganizador; // Temporal
 
-    // --- Relaciones con otros subsistemas (Tipos conceptuales) ---
-    // private com.torneotenismesa.gestionusuarios.modelos.Usuario organizador;
-    // private List<com.torneotenismesa.gestionparticipantes.modelos.Inscripcion> inscripciones;
-    // private List<Object> fasesTorneo; // Podría ser List<Ronda> o List<Grupo> o una abstracción común
-
-    // Atributo de ejemplo para el organizador (se reemplazaría con la entidad Usuario real)
-    private UUID idOrganizador; // Temporalmente, hasta integrar con subsistema de Usuarios
+    // --- NUEVAS ADICIONES PARA GESTIONAR INSCRIPCIONES ---
+    private final List<Inscripcion> inscripcionesRegistradas;
 
     public Torneo(String nombre, Date fechaInicio, String lugar, TipoTorneo tipoTorneo, FormatoTorneo formato) {
         this.idTorneo = UUID.randomUUID();
@@ -47,111 +41,68 @@ public class Torneo {
         this.lugar = lugar;
         this.tipoTorneo = Objects.requireNonNull(tipoTorneo, "El tipo de torneo no puede ser nulo");
         this.formato = Objects.requireNonNull(formato, "El formato del torneo no puede ser nulo");
-        this.estado = EstadoTorneo.PLANIFICADO; // Estado inicial por defecto
-        // this.inscripciones = new ArrayList<>();
-        // this.fasesTorneo = new ArrayList<>();
+        this.estado = EstadoTorneo.PLANIFICADO;
+        this.inscripcionesRegistradas = new ArrayList<>(); // <--- INICIALIZAR LISTA
     }
 
-    // --- Getters y Setters ---
+    // Getters y Setters existentes... (los mantengo por brevedad)
 
-    public UUID getIdTorneo() {
-        return idTorneo;
+    public UUID getIdTorneo() { return idTorneo; }
+    public String getNombre() { return nombre; }
+    public void setNombre(String nombre) { this.nombre = nombre; }
+    public Date getFechaInicio() { return fechaInicio; }
+    public void setFechaInicio(Date fechaInicio) { this.fechaInicio = fechaInicio; }
+    public Date getFechaFin() { return fechaFin; }
+    public void setFechaFin(Date fechaFin) { this.fechaFin = fechaFin; }
+    public String getLugar() { return lugar; }
+    public void setLugar(String lugar) { this.lugar = lugar; }
+    public TipoTorneo getTipoTorneo() { return tipoTorneo; }
+    public void setTipoTorneo(TipoTorneo tipoTorneo) { this.tipoTorneo = tipoTorneo; }
+    public FormatoTorneo getFormato() { return formato; }
+    public void setFormato(FormatoTorneo formato) { this.formato = formato; }
+    public EstadoTorneo getEstado() { return estado; }
+    // estado se modifica internamente
+    public String getReglasEspecificas() { return reglasEspecificas; }
+    public void setReglasEspecificas(String reglasEspecificas) { this.reglasEspecificas = reglasEspecificas; }
+    public UUID getIdOrganizador() { return idOrganizador; }
+    public void setIdOrganizador(UUID idOrganizador) { this.idOrganizador = idOrganizador; }
+
+
+    // --- NUEVOS MÉTODOS PARA GESTIONAR INSCRIPCIONES ---
+    public boolean agregarInscripcion(Inscripcion inscripcion) {
+        if (this.estado != EstadoTorneo.INSCRIPCION_ABIERTA) {
+            System.err.println("Error: No se puede agregar inscripción. El torneo '" + nombre + "' no está abierto para inscripciones. Estado actual: " + estado);
+            return false;
+        }
+        if (!inscripcion.getIdTorneo().equals(this.idTorneo)) {
+            System.err.println("Error: La inscripción no pertenece a este torneo.");
+            return false;
+        }
+        if (this.inscripcionesRegistradas.stream().anyMatch(i -> 
+            i.getIdInscripcion().equals(inscripcion.getIdInscripcion()) ||
+            i.getParticipante().getIdParticipante().equals(inscripcion.getParticipante().getIdParticipante()))) {
+            System.err.println("Error: El participante '" + inscripcion.getParticipante().getNombreDescriptivo() + "' ya está inscrito o la inscripción ya existe.");
+            return false;
+        }
+
+        this.inscripcionesRegistradas.add(inscripcion);
+        inscripcion.confirmarInscripcion(); // Marcar la inscripción como confirmada
+        System.out.println("Inscripción de '" + inscripcion.getParticipante().getNombreDescriptivo() + "' registrada y confirmada para el torneo '" + nombre + "'.");
+        return true;
     }
 
-    public String getNombre() {
-        return nombre;
+    public List<Inscripcion> getInscripcionesRegistradas() {
+        return Collections.unmodifiableList(inscripcionesRegistradas);
     }
 
-    public void setNombre(String nombre) {
-        this.nombre = nombre;
+    public List<Participante> getParticipantesInscritosConfirmados() {
+        return this.inscripcionesRegistradas.stream()
+                .filter(i -> i.getEstadoInscripcion() == EstadoInscripcion.CONFIRMADA)
+                .map(Inscripcion::getParticipante)
+                .collect(Collectors.toList());
     }
 
-    public Date getFechaInicio() {
-        return fechaInicio;
-    }
-
-    public void setFechaInicio(Date fechaInicio) {
-        this.fechaInicio = fechaInicio;
-    }
-
-    public Date getFechaFin() {
-        return fechaFin;
-    }
-
-    public void setFechaFin(Date fechaFin) {
-        this.fechaFin = fechaFin;
-    }
-
-    public String getLugar() {
-        return lugar;
-    }
-
-    public void setLugar(String lugar) {
-        this.lugar = lugar;
-    }
-
-    public TipoTorneo getTipoTorneo() {
-        return tipoTorneo;
-    }
-
-    public void setTipoTorneo(TipoTorneo tipoTorneo) {
-        this.tipoTorneo = tipoTorneo;
-    }
-
-    public FormatoTorneo getFormato() {
-        return formato;
-    }
-
-    public void setFormato(FormatoTorneo formato) {
-        this.formato = formato;
-    }
-
-    public EstadoTorneo getEstado() {
-        return estado;
-    }
-
-    public void setEstado(EstadoTorneo estado) {
-        this.estado = estado;
-    }
-
-    public String getReglasEspecificas() {
-        return reglasEspecificas;
-    }
-
-    public void setReglasEspecificas(String reglasEspecificas) {
-        this.reglasEspecificas = reglasEspecificas;
-    }
-
-    // Getter y Setter para el ID del organizador (temporal)
-    public UUID getIdOrganizador() {
-        return idOrganizador;
-    }
-
-    public void setIdOrganizador(UUID idOrganizador) {
-        // En un sistema real, aquí se asignaría un objeto Usuario
-        this.idOrganizador = idOrganizador;
-    }
-
-    // --- Métodos para gestionar relaciones (conceptuales por ahora) ---
-
-    // public void agregarInscripcion(com.torneotenismesa.gestionparticipantes.modelos.Inscripcion inscripcion) {
-    //     this.inscripciones.add(inscripcion);
-    // }
-
-    // public List<com.torneotenismesa.gestionparticipantes.modelos.Inscripcion> getInscripciones() {
-    //     return new ArrayList<>(inscripciones); // Devuelve copia para evitar modificación externa
-    // }
-
-    // public void agregarFase(Object fase) { // Fase puede ser Ronda o Grupo
-    //     this.fasesTorneo.add(fase);
-    // }
-
-    // public List<Object> getFasesTorneo() {
-    //     return new ArrayList<>(fasesTorneo);
-    // }
-
-    // --- Métodos de Lógica de Negocio (ejemplos) ---
-
+    // Métodos de Lógica de Negocio (abrirInscripciones, cerrarInscripciones, etc.)
     public void abrirInscripciones() {
         if (this.estado == EstadoTorneo.PLANIFICADO) {
             this.estado = EstadoTorneo.INSCRIPCION_ABIERTA;
@@ -164,33 +115,36 @@ public class Torneo {
     public void cerrarInscripciones() {
         if (this.estado == EstadoTorneo.INSCRIPCION_ABIERTA) {
             this.estado = EstadoTorneo.INSCRIPCION_CERRADA;
-            System.out.println("Inscripciones cerradas para el torneo: " + nombre);
-            // Aquí se podría disparar la lógica para generar cuadros/grupos vía el FormatoTorneo
+            long countConfirmados = this.inscripcionesRegistradas.stream()
+                                        .filter(i -> i.getEstadoInscripcion() == EstadoInscripcion.CONFIRMADA)
+                                        .count();
+            System.out.println("Inscripciones cerradas para el torneo: " + nombre + ". Total inscritos confirmados: " + countConfirmados);
         } else {
             System.err.println("No se pueden cerrar inscripciones. Estado actual: " + estado);
         }
     }
 
     public void iniciarTorneo() {
-        if (this.estado == EstadoTorneo.INSCRIPCION_CERRADA /* && cuadrosGenerados */) {
+        if (this.estado == EstadoTorneo.INSCRIPCION_CERRADA) {
+            if (getParticipantesInscritosConfirmados().size() < 2) {
+                System.err.println("El torneo '" + nombre + "' no puede iniciar con menos de 2 participantes confirmados.");
+                return;
+            }
             this.estado = EstadoTorneo.EN_CURSO;
             System.out.println("El torneo '" + nombre + "' ha comenzado.");
         } else {
-            System.err.println("El torneo no puede iniciar. Estado actual: " + estado + ". Asegúrese que las inscripciones estén cerradas y los cuadros generados.");
+            System.err.println("El torneo no puede iniciar. Estado actual: " + estado + ". Asegúrese que las inscripciones estén cerradas.");
         }
     }
 
     public void finalizarTorneo() {
-        if (this.estado == EstadoTorneo.EN_CURSO /* && todosLosPartidosFinalizados */) {
+        if (this.estado == EstadoTorneo.EN_CURSO) {
             this.estado = EstadoTorneo.FINALIZADO;
             System.out.println("El torneo '" + nombre + "' ha finalizado.");
         } else {
-            System.err.println("El torneo no puede finalizar. Estado actual: " + estado + ". Asegúrese que todos los partidos hayan concluido.");
+            System.err.println("El torneo no puede finalizar. Estado actual: " + estado);
         }
     }
-
-
-    // --- Sobrescritura de equals, hashCode y toString ---
 
     @Override
     public boolean equals(Object o) {
@@ -210,10 +164,7 @@ public class Torneo {
         return "Torneo{" +
                 "idTorneo=" + idTorneo +
                 ", nombre='" + nombre + '\'' +
-                ", fechaInicio=" + fechaInicio +
                 ", estado=" + estado +
-                ", tipoTorneo=" + tipoTorneo +
-                ", formato=" + (formato != null ? formato.getNombreFormato() : "N/A") +
                 '}';
     }
 }
