@@ -1,0 +1,236 @@
+@startuml
+' !theme materia
+' uncomment the line above for a different theme
+
+' --- Estilo y Configuración ---
+skinparam classAttributeIconSize 0
+skinparam packageStyle rect
+hide empty members
+left to right direction
+' top to bottom direction ' Puedes alternar para ver qué layout te gusta más
+
+' --- Definición de Paquetes (Subsistemas) ---
+package "Gestión de Torneos (TournamentManagement)" as TM {
+    class Torneo {
+        +idTorneo: UUID
+        +nombre: String
+        +fechaInicio: Date
+        +fechaFin: Date
+        +lugar: String
+        +tipoTorneo: TipoTorneoEnum
+        +formato: FormatoTorneo
+        +estado: EstadoTorneoEnum
+        +reglasEspecificas: String
+        ' organizador: Usuario (relación)
+    }
+
+    interface FormatoTorneo {
+        +idFormato: UUID
+        +nombreFormato: String
+        +descripcion: String
+        +generarCuadro()
+        +determinarSiguienteRonda()
+    }
+
+    enum TipoTorneoEnum {
+        INDIVIDUAL
+        DOBLES
+        EQUIPOS
+    }
+
+    enum EstadoTorneoEnum {
+        PLANIFICADO
+        INSCRIPCION_ABIERTA
+        EN_CURSO
+        FINALIZADO
+        CANCELADO
+    }
+}
+
+package "Gestión de Participantes (ParticipantManagement)" as PM {
+    abstract class Participante {
+        +idParticipante: UUID
+    }
+
+    class Jugador extends Participante {
+        +idJugador: UUID
+        +nombre: String
+        +apellido: String
+        +fechaNacimiento: Date
+        +ranking: Integer
+        +club: String
+        +genero: GeneroEnum
+    }
+
+    class Equipo extends Participante {
+        +idEquipo: UUID
+        +nombreEquipo: String
+    }
+
+    class Inscripcion {
+        +idInscripcion: UUID
+        +fechaInscripcion: DateTime
+        +estadoInscripcion: EstadoInscripcionEnum
+        ' categoria: Categoria (relación)
+    }
+
+    class Categoria {
+        +idCategoria: UUID
+        +nombreCategoria: String
+        +restriccionEdadMin: Integer
+        +restriccionEdadMax: Integer
+        +restriccionGenero: GeneroEnum
+    }
+
+    enum EstadoInscripcionEnum {
+        PENDIENTE
+        CONFIRMADA
+        RECHAZADA
+    }
+    enum GeneroEnum {
+        MASCULINO
+        FEMENINO
+        MIXTO
+    }
+}
+
+package "Gestión de Partidos y Resultados (MatchResultsManagement)" as MRM {
+    class Partido {
+        +idPartido: UUID
+        +fechaHoraProgramada: DateTime
+        +fechaHoraRealInicio: DateTime
+        +fechaHoraRealFin: DateTime
+        +estadoPartido: EstadoPartidoEnum
+        ' resultado: Resultado (relación)
+    }
+
+    class Resultado {
+        +idResultado: UUID
+        +setsGanadosParticipante1: Integer
+        +setsGanadosParticipante2: Integer
+        +puntosPorSet: List<String>
+        ' ganador: Participante (relación)
+        ' perdedor: Participante (relación)
+        +observaciones: String
+    }
+
+    class Ronda {
+        +idRonda: UUID
+        +numeroRonda: Integer
+        +nombreRonda: String
+    }
+
+    class Grupo {
+        +idGrupo: UUID
+        +nombreGrupo: String
+    }
+
+    class TablaClasificacionGrupo {
+        +idTabla: UUID
+        ' entradas: List<EntradaClasificacion> (relación)
+    }
+
+    class EntradaClasificacion {
+        +posicion: Integer
+        +partidosJugados: Integer
+        +victorias: Integer
+        +derrotas: Integer
+        +setsFavor: Integer
+        +setsContra: Integer
+        +puntosFavor: Integer
+        +puntosContra: Integer
+    }
+    enum EstadoPartidoEnum{
+        PROGRAMADO
+        EN_JUEGO
+        FINALIZADO
+        POSPUESTO
+        WO
+    }
+}
+
+package "Gestión de Recursos y Logística (ResourceLogisticsManagement)" as RLM {
+    class MesaJuego {
+        +idMesa: UUID
+        +identificadorMesa: String
+        +ubicacionEspecifica: String
+        +disponible: Boolean
+    }
+}
+
+package "Gestión de Usuarios y Acceso (UserAccessManagement)" as UAM {
+    class Usuario {
+        +idUsuario: UUID
+        +nombreUsuario: String
+        +email: String
+        +hashContrasena: String
+        ' rol: RolUsuario (relación)
+    }
+
+    class RolUsuario {
+        +idRol: UUID
+        +nombreRol: String
+        +permisos: List<String>
+    }
+}
+
+' --- Relaciones entre Entidades ---
+
+' Relaciones dentro de Gestión de Torneos
+TM.Torneo "1" o-- "1" TM.FormatoTorneo : utiliza >
+TM.Torneo --> TM.TipoTorneoEnum : tiene tipo
+TM.Torneo --> TM.EstadoTorneoEnum : tiene estado
+
+' Relaciones dentro de Gestión de Participantes
+PM.Jugador --> PM.GeneroEnum : tiene genero
+PM.Inscripcion --> PM.EstadoInscripcionEnum : tiene estado
+PM.Categoria --> PM.GeneroEnum : restringe por genero
+
+' Relaciones dentro de Gestión de Partidos y Resultados
+MRM.Partido --> MRM.EstadoPartidoEnum : tiene estado
+
+' Relaciones entre Paquetes/Subsistemas
+
+' Torneo y sus componentes
+TM.Torneo "1" -- "0..*" PM.Inscripcion : tiene >
+TM.Torneo "1" -- "1" UAM.Usuario : "organizado por (Organizador)"
+TM.Torneo "1" -- "0..*" MRM.Ronda : contiene >
+TM.Torneo "1" -- "0..*" MRM.Grupo : contiene opcionalmente >
+TM.Torneo "1" -- "0..*" PM.Categoria : puede tener >
+
+
+' Participante y sus especializaciones
+PM.Participante <|-- PM.Jugador
+PM.Participante <|-- PM.Equipo
+PM.Equipo "1" o-- "2..*" PM.Jugador : "compuesto por"
+
+' Inscripción
+PM.Inscripcion "1" -- "1" PM.Participante : para >
+PM.Inscripcion "1" -- "0..1" PM.Categoria : en > '(opcional)
+
+' Partido y sus componentes/relaciones
+MRM.Partido "1" -- "2" PM.Participante : "disputado por" ' (dos participantes)
+note right on link : Puede ser ParticipanteInscrito
+MRM.Partido "1" *-- "1" MRM.Resultado : tiene >
+MRM.Partido "0..1" -- "1" UAM.Usuario : "oficiado por (Árbitro)"
+MRM.Partido "0..1" -- "1" RLM.MesaJuego : "jugado en"
+
+' Resultado
+MRM.Resultado "1" -- "1" PM.Participante : ganador >
+MRM.Resultado "1" -- "1" PM.Participante : perdedor >
+
+' Ronda y Grupo
+MRM.Ronda "1" *-- "1..*" MRM.Partido : contiene >
+MRM.Grupo "1" *-- "1..*" MRM.Partido : contiene > ' (todos vs todos)
+MRM.Grupo "1" -- "0..*" PM.Inscripcion : agrupa > ' (o Participante)
+MRM.Grupo "1" -- "1" MRM.TablaClasificacionGrupo : genera >
+
+' Tabla de Clasificación
+MRM.TablaClasificacionGrupo "1" *-- "1..*" MRM.EntradaClasificacion : "tiene entradas"
+MRM.EntradaClasificacion "1" -- "1" PM.Inscripcion : para > ' (o Participante)
+
+' Usuario y Rol
+UAM.Usuario "1" -- "1" UAM.RolUsuario : tiene >
+PM.Jugador ..> UAM.Usuario : "(opcionalmente es un)" ' Relación opcional si un jugador puede ser usuario del sistema
+
+@enduml
