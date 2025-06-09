@@ -44,14 +44,14 @@ public class EliminatoriaDirectaFormatoSim implements FormatoTorneo {
     
     // Métodos conceptuales de la interfaz no implementados en detalle para esta simulación.
     // En un sistema real, Torneo invocaría estos métodos.
-    @Override
+    // @Override
     public Object generarCuadro(/*Torneo torneo, List<Inscripcion> participantesInscritos*/) {
         // La lógica real estaría aquí, usando los parámetros.
         // Para esta simulación, el SimuladorIntegradoJava llama a generarRondaSimulada directamente.
         throw new UnsupportedOperationException("Método conceptual no implementado para la simulación directa.");
     }
 
-    @Override
+    // @Override
     public Object determinarSiguienteRonda(/*Torneo torneo, Object faseActual*/) {
         throw new UnsupportedOperationException("Método conceptual no implementado para la simulación directa.");
     }
