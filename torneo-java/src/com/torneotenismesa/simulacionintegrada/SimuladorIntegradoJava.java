@@ -65,7 +65,7 @@ public class SimuladorIntegradoJava {
 
         Inscripcion inscripcion5 = new Inscripcion(jugador5, miTorneo.getIdTorneo());
         // No agregamos la inscripción 5 para la simulación
-        // miTorneo.agregarInscripcion(inscripcion5);
+        miTorneo.agregarInscripcion(inscripcion5);
 
         miTorneo.cerrarInscripciones();
 
